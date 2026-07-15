@@ -11,12 +11,14 @@ import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import fumi.day.literalgallery.ui.grid.GalleryGridScreen
 import fumi.day.literalgallery.ui.grid.GalleryGridViewModel
+import fumi.day.literalgallery.ui.settings.SettingsScreen
 import fumi.day.literalgallery.ui.viewer.MediaViewerScreen
 
 object Routes {
     const val GALLERY_GRAPH = "gallery"
     const val GRID = "gallery/grid"
     const val VIEWER = "gallery/viewer/{mediaKey}"
+    const val SETTINGS = "settings"
     fun viewer(mediaKey: String) = "gallery/viewer/$mediaKey"
 }
 
@@ -31,7 +33,8 @@ fun NavGraph(navController: NavHostController) {
                 val viewModel: GalleryGridViewModel = hiltViewModel(parentEntry)
                 GalleryGridScreen(
                     viewModel = viewModel,
-                    onOpen = { mediaKey -> navController.navigate(Routes.viewer(mediaKey)) }
+                    onOpen = { mediaKey -> navController.navigate(Routes.viewer(mediaKey)) },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) }
                 )
             }
             composable(
@@ -48,6 +51,9 @@ fun NavGraph(navController: NavHostController) {
                     viewModel = viewModel
                 )
             }
+        }
+        composable(Routes.SETTINGS) {
+            SettingsScreen(onNavigateBack = { navController.popBackStack() })
         }
     }
 }

@@ -13,6 +13,10 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,7 +46,8 @@ private val dayFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d (EE
 @Composable
 fun GalleryGridScreen(
     viewModel: GalleryGridViewModel,
-    onOpen: (String) -> Unit
+    onOpen: (String) -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     val entries by viewModel.gridEntries.collectAsState()
     var columnCount by rememberSaveable { mutableIntStateOf(3) }
@@ -151,6 +156,13 @@ fun GalleryGridScreen(
             ) {
                 MonthHeaderContent(header)
             }
+        }
+
+        IconButton(
+            onClick = onOpenSettings,
+            modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(4.dp)
+        ) {
+            Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
         }
     }
 }
