@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Literal Gallery</string>
+    <string name="permission_rationale">Literal Gallery needs access to your photos and videos to show them here.</string>
+    <string name="permission_grant_button">Grant access</string>
+</resources>
