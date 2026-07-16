@@ -12,11 +12,12 @@ import fumi.day.literalgallery.util.formatDurationMs
 import fumi.day.literalgallery.util.formatFileSize
 import java.text.DateFormat
 import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ExifPanel(item: MediaItem, exifData: ExifData?) {
     Column(modifier = Modifier.padding(24.dp)) {
-        Text(DateFormat.getDateTimeInstance().format(Date(item.dateTakenMillis)))
+        Text(DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.ENGLISH).format(Date(item.dateTakenMillis)))
         if (item.isVideo) {
             item.durationMs?.let { Text("Duration: ${formatDurationMs(it)}") }
         } else {

@@ -96,6 +96,10 @@ fun GalleryGridScreen(
             }
         }
 
+        if (entries.isEmpty()) {
+            GridEmptyState(currentFilter)
+        }
+
         currentHeader?.let { header ->
             StickyMonthHeaderOverlay(
                 header = header,
