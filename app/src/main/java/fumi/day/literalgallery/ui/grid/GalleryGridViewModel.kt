@@ -1,19 +1,24 @@
 package fumi.day.literalgallery.ui.grid
 
+import android.content.IntentSender
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fumi.day.literalgallery.data.exif.ExifReader
+import fumi.day.literalgallery.data.media.MediaDeleter
 import fumi.day.literalgallery.data.repository.MediaRepository
 import fumi.day.literalgallery.domain.model.ExifData
 import fumi.day.literalgallery.domain.model.GridEntry
 import fumi.day.literalgallery.domain.model.MediaItem
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDate
@@ -26,13 +31,35 @@ import javax.inject.Inject
 @HiltViewModel
 class GalleryGridViewModel @Inject constructor(
     repository: MediaRepository,
-    private val exifReader: ExifReader
+    private val exifReader: ExifReader,
+    private val mediaDeleter: MediaDeleter
 ) : ViewModel() {
 
     val mediaItems: StateFlow<List<MediaItem>> = repository.observeMedia()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     suspend fun readExif(uri: Uri): ExifData = withContext(Dispatchers.IO) { exifReader.read(uri) }
+
+    private val _selectedKeys = MutableStateFlow<Set<String>>(emptySet())
+    val selectedKeys: StateFlow<Set<String>> = _selectedKeys.asStateFlow()
+
+    fun toggleSelection(key: String) {
+        _selectedKeys.update { current -> if (key in current) current - key else current + key }
+    }
+
+    fun clearSelection() {
+        _selectedKeys.value = emptySet()
+    }
+
+    fun trashIntentSenderFor(keys: Set<String>): IntentSender? {
+        val uris = mediaItems.value.filter { it.mediaKey in keys }.map { it.contentUri }
+        return mediaDeleter.createTrashIntentSender(uris)
+    }
+
+    fun deleteDirectly(keys: Set<String>) {
+        val uris = mediaItems.value.filter { it.mediaKey in keys }.map { it.contentUri }
+        mediaDeleter.deleteDirectly(uris)
+    }
 
     val gridEntries: StateFlow<List<GridEntry>> = mediaItems
         .map(::buildGridEntries)

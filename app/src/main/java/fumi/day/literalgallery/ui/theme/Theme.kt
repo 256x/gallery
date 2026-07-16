@@ -10,6 +10,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.core.graphics.toColorInt
 import androidx.core.view.WindowCompat
 
 private val DarkColors = darkColorScheme(
@@ -28,12 +29,28 @@ private val LightColors = lightColorScheme(
     onSurface = Color.Black
 )
 
+fun parseColor(hex: String): Color? {
+    if (hex.isBlank()) return null
+    return try {
+        Color(hex.toColorInt())
+    } catch (e: IllegalArgumentException) {
+        null
+    }
+}
+
 @Composable
 fun LiteralGalleryTheme(
+    keyColorHex: String = "",
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColors else LightColors
+    val baseColors = if (darkTheme) DarkColors else LightColors
+    val keyColor = parseColor(keyColorHex)
+    val colorScheme = if (keyColor != null) {
+        baseColors.copy(primary = keyColor, secondary = keyColor, tertiary = keyColor)
+    } else {
+        baseColors
+    }
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

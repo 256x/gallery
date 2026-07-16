@@ -1,14 +1,20 @@
 package fumi.day.literalgallery.ui.grid
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,14 +28,21 @@ import coil3.compose.AsyncImage
 import fumi.day.literalgallery.domain.model.MediaItem
 import fumi.day.literalgallery.util.formatDurationMs
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MediaGridCell(item: MediaItem, onClick: () -> Unit) {
+fun MediaGridCell(
+    item: MediaItem,
+    selectionMode: Boolean,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
     Box(
         modifier = Modifier
             .padding(1.dp)
             .aspectRatio(1f)
             .clip(RoundedCornerShape(2.dp))
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
     ) {
         AsyncImage(
             model = item.contentUri,
@@ -54,6 +67,37 @@ fun MediaGridCell(item: MediaItem, onClick: () -> Unit) {
                         .background(Color.Black.copy(alpha = 0.5f))
                         .padding(horizontal = 4.dp, vertical = 1.dp)
                 )
+            }
+        }
+
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .matchParentSize()
+            )
+        }
+
+        if (selectionMode) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(6.dp)
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primary else Color.Black.copy(alpha = 0.4f)
+                    )
+                    .border(1.dp, Color.White, CircleShape)
+            ) {
+                if (isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.align(Alignment.Center).size(14.dp)
+                    )
+                }
             }
         }
     }

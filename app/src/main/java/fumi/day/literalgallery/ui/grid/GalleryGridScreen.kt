@@ -1,5 +1,9 @@
 package fumi.day.literalgallery.ui.grid
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -9,6 +13,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,8 +27,11 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,6 +81,13 @@ fun GalleryGridScreen(
     onOpenSettings: () -> Unit
 ) {
     val entries by viewModel.gridEntries.collectAsState()
+    val selectedKeys by viewModel.selectedKeys.collectAsState()
+    val isSelectionMode = selectedKeys.isNotEmpty()
+    val trashLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) viewModel.clearSelection()
+    }
     var columnCount by rememberSaveable { mutableIntStateOf(3) }
     var zoomAccum by remember { mutableFloatStateOf(1f) }
     val gridState = rememberLazyGridState()
@@ -198,7 +213,19 @@ fun GalleryGridScreen(
                 when (val entry = entries[index]) {
                     is GridEntry.MonthHeader -> MonthHeaderContent(entry)
                     is GridEntry.DayLabel -> DayLabelContent(entry)
-                    is GridEntry.Cell -> MediaGridCell(entry.item, onClick = { onOpen(entry.item.mediaKey) })
+                    is GridEntry.Cell -> MediaGridCell(
+                        item = entry.item,
+                        selectionMode = isSelectionMode,
+                        isSelected = entry.item.mediaKey in selectedKeys,
+                        onClick = {
+                            if (isSelectionMode) {
+                                viewModel.toggleSelection(entry.item.mediaKey)
+                            } else {
+                                onOpen(entry.item.mediaKey)
+                            }
+                        },
+                        onLongClick = { viewModel.toggleSelection(entry.item.mediaKey) }
+                    )
                 }
             }
         }
@@ -214,11 +241,51 @@ fun GalleryGridScreen(
             }
         }
 
-        IconButton(
-            onClick = onOpenSettings,
-            modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(4.dp)
-        ) {
-            Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
+        if (isSelectionMode) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(4.dp)
+            ) {
+                Text(
+                    text = "${selectedKeys.size}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+                IconButton(onClick = { viewModel.clearSelection() }) {
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Cancel selection")
+                }
+            }
+        } else {
+            IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(4.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
+            }
+        }
+
+        if (isSelectionMode) {
+            IconButton(
+                onClick = {
+                    val intentSender = viewModel.trashIntentSenderFor(selectedKeys)
+                    if (intentSender != null) {
+                        trashLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                    } else {
+                        viewModel.deleteDirectly(selectedKeys)
+                        viewModel.clearSelection()
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(24.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete selected",
+                    tint = Color.White
+                )
+            }
         }
 
         AnimatedVisibility(
