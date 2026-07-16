@@ -37,10 +37,33 @@ class GalleryGridViewModel @Inject constructor(
     private val mediaDeleter: MediaDeleter
 ) : ViewModel() {
 
+    // --- Media source, type filter, and date grouping ---
+
     val mediaItems: StateFlow<List<MediaItem>> = repository.observeMedia()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    suspend fun readExif(uri: Uri): ExifData = withContext(Dispatchers.IO) { exifReader.read(uri) }
+    private val _filter = MutableStateFlow(MediaFilter.ALL)
+    val filter: StateFlow<MediaFilter> = _filter.asStateFlow()
+
+    fun setFilter(filter: MediaFilter) {
+        _filter.value = filter
+    }
+
+    // Filtered by type but not yet grouped into GridEntry - shared with the viewer so
+    // swiping there stays within whatever subset (all/photos/videos) the grid is showing.
+    val filteredMediaItems: StateFlow<List<MediaItem>> = combine(mediaItems, _filter) { items, filter ->
+        when (filter) {
+            MediaFilter.ALL -> items
+            MediaFilter.PHOTOS -> items.filter { !it.isVideo }
+            MediaFilter.VIDEOS -> items.filter { it.isVideo }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val gridEntries: StateFlow<List<GridEntry>> = filteredMediaItems
+        .map(::buildGridEntries)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    // --- Multi-select and delete ---
 
     private val _selectedKeys = MutableStateFlow<Set<String>>(emptySet())
     val selectedKeys: StateFlow<Set<String>> = _selectedKeys.asStateFlow()
@@ -63,26 +86,9 @@ class GalleryGridViewModel @Inject constructor(
         mediaDeleter.deleteDirectly(uris)
     }
 
-    private val _filter = MutableStateFlow(MediaFilter.ALL)
-    val filter: StateFlow<MediaFilter> = _filter.asStateFlow()
+    // --- EXIF (read on demand, only when the viewer's Exif panel is opened) ---
 
-    fun setFilter(filter: MediaFilter) {
-        _filter.value = filter
-    }
-
-    // Filtered by type but not yet grouped into GridEntry - shared with the viewer so
-    // swiping there stays within whatever subset (all/photos/videos) the grid is showing.
-    val filteredMediaItems: StateFlow<List<MediaItem>> = combine(mediaItems, _filter) { items, filter ->
-        when (filter) {
-            MediaFilter.ALL -> items
-            MediaFilter.PHOTOS -> items.filter { !it.isVideo }
-            MediaFilter.VIDEOS -> items.filter { it.isVideo }
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val gridEntries: StateFlow<List<GridEntry>> = filteredMediaItems
-        .map(::buildGridEntries)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    suspend fun readExif(uri: Uri): ExifData = withContext(Dispatchers.IO) { exifReader.read(uri) }
 
     private fun buildGridEntries(items: List<MediaItem>): List<GridEntry> {
         val zone = ZoneId.systemDefault()
