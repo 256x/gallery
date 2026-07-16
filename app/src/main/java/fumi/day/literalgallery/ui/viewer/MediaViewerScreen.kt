@@ -44,7 +44,7 @@ fun MediaViewerScreen(
     mediaKey: String,
     viewModel: GalleryGridViewModel
 ) {
-    val items by viewModel.mediaItems.collectAsState()
+    val items by viewModel.filteredMediaItems.collectAsState()
     if (items.isEmpty()) return
 
     val initialPage = items.indexOfFirst { it.mediaKey == mediaKey }.coerceAtLeast(0)

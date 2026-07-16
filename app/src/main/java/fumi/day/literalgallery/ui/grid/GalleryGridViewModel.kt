@@ -10,12 +10,14 @@ import fumi.day.literalgallery.data.media.MediaDeleter
 import fumi.day.literalgallery.data.repository.MediaRepository
 import fumi.day.literalgallery.domain.model.ExifData
 import fumi.day.literalgallery.domain.model.GridEntry
+import fumi.day.literalgallery.domain.model.MediaFilter
 import fumi.day.literalgallery.domain.model.MediaItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -61,7 +63,24 @@ class GalleryGridViewModel @Inject constructor(
         mediaDeleter.deleteDirectly(uris)
     }
 
-    val gridEntries: StateFlow<List<GridEntry>> = mediaItems
+    private val _filter = MutableStateFlow(MediaFilter.ALL)
+    val filter: StateFlow<MediaFilter> = _filter.asStateFlow()
+
+    fun setFilter(filter: MediaFilter) {
+        _filter.value = filter
+    }
+
+    // Filtered by type but not yet grouped into GridEntry - shared with the viewer so
+    // swiping there stays within whatever subset (all/photos/videos) the grid is showing.
+    val filteredMediaItems: StateFlow<List<MediaItem>> = combine(mediaItems, _filter) { items, filter ->
+        when (filter) {
+            MediaFilter.ALL -> items
+            MediaFilter.PHOTOS -> items.filter { !it.isVideo }
+            MediaFilter.VIDEOS -> items.filter { it.isVideo }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val gridEntries: StateFlow<List<GridEntry>> = filteredMediaItems
         .map(::buildGridEntries)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 

@@ -12,6 +12,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -32,7 +33,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +65,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import fumi.day.literalgallery.domain.model.GridEntry
+import fumi.day.literalgallery.domain.model.MediaFilter
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -81,6 +86,7 @@ fun GalleryGridScreen(
     onOpenSettings: () -> Unit
 ) {
     val entries by viewModel.gridEntries.collectAsState()
+    val currentFilter by viewModel.filter.collectAsState()
     val selectedKeys by viewModel.selectedKeys.collectAsState()
     val isSelectionMode = selectedKeys.isNotEmpty()
     val trashLauncher = rememberLauncherForActivityResult(
@@ -236,6 +242,13 @@ fun GalleryGridScreen(
                     .align(Alignment.TopStart)
                     .fillMaxWidth()
                     .onGloballyPositioned { headerHeightPx = it.size.height.toFloat() }
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = {
+                                scope.launch { gridState.animateScrollToItem(0) }
+                            }
+                        )
+                    }
             ) {
                 MonthHeaderContent(header)
             }
@@ -256,11 +269,34 @@ fun GalleryGridScreen(
                 }
             }
         } else {
-            IconButton(
-                onClick = onOpenSettings,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(4.dp)
             ) {
-                Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
+                IconButton(onClick = { viewModel.setFilter(MediaFilter.ALL) }) {
+                    Icon(
+                        imageVector = Icons.Default.GridView,
+                        contentDescription = "All",
+                        tint = filterTint(currentFilter, MediaFilter.ALL)
+                    )
+                }
+                IconButton(onClick = { viewModel.setFilter(MediaFilter.PHOTOS) }) {
+                    Icon(
+                        imageVector = Icons.Default.Image,
+                        contentDescription = "Photos",
+                        tint = filterTint(currentFilter, MediaFilter.PHOTOS)
+                    )
+                }
+                IconButton(onClick = { viewModel.setFilter(MediaFilter.VIDEOS) }) {
+                    Icon(
+                        imageVector = Icons.Default.Videocam,
+                        contentDescription = "Videos",
+                        tint = filterTint(currentFilter, MediaFilter.VIDEOS)
+                    )
+                }
+                IconButton(onClick = onOpenSettings) {
+                    Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
+                }
             }
         }
 
@@ -360,6 +396,10 @@ fun GalleryGridScreen(
         }
     }
 }
+
+@Composable
+private fun filterTint(current: MediaFilter, target: MediaFilter): Color =
+    if (current == target) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
 
 @Composable
 private fun MonthHeaderContent(entry: GridEntry.MonthHeader) {
