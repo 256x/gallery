@@ -35,14 +35,14 @@ android {
         }
     }
 
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "fumi.day.literalgallery"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 6
-        versionName = "0.5.0"
+        targetSdk = 36
+        versionCode = 7
+        versionName = "0.5.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
