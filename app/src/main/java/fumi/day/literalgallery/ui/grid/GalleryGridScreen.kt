@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import fumi.day.literalgallery.domain.model.GridEntry
 
 private const val MIN_COLUMNS = 2
@@ -32,6 +33,7 @@ fun GalleryGridScreen(
     onOpen: (String) -> Unit,
     onOpenSettings: () -> Unit
 ) {
+    val context = LocalContext.current
     val entries by viewModel.gridEntries.collectAsState()
     val currentFilter by viewModel.filter.collectAsState()
     val selectedKeys by viewModel.selectedKeys.collectAsState()
@@ -118,8 +120,11 @@ fun GalleryGridScreen(
         )
 
         if (isSelectionMode) {
-            SelectionDeleteButton(
-                onClick = {
+            SelectionActionButtons(
+                onShare = {
+                    context.startActivity(viewModel.shareIntentFor(selectedKeys))
+                },
+                onDelete = {
                     val intentSender = viewModel.trashIntentSenderFor(selectedKeys)
                     if (intentSender != null) {
                         trashLauncher.launch(IntentSenderRequest.Builder(intentSender).build())

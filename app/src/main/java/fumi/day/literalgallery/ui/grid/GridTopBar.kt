@@ -1,6 +1,7 @@
 package fumi.day.literalgallery.ui.grid
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -85,18 +87,30 @@ private fun filterTint(current: MediaFilter, target: MediaFilter): Color =
     if (current == target) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
 
 @Composable
-internal fun BoxScope.SelectionDeleteButton(onClick: () -> Unit) {
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier
-            .align(Alignment.BottomEnd)
-            .padding(24.dp)
-            .background(MaterialTheme.colorScheme.primary, CircleShape)
+internal fun BoxScope.SelectionActionButtons(onShare: () -> Unit, onDelete: () -> Unit) {
+    Row(
+        modifier = Modifier.align(Alignment.BottomEnd).padding(24.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.Delete,
-            contentDescription = "Delete selected",
-            tint = Color.White
-        )
+        IconButton(
+            onClick = onShare,
+            modifier = Modifier.background(MaterialTheme.colorScheme.secondary, CircleShape)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Share,
+                contentDescription = "Share selected",
+                tint = Color.White
+            )
+        }
+        IconButton(
+            onClick = onDelete,
+            modifier = Modifier.background(MaterialTheme.colorScheme.primary, CircleShape)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Delete selected",
+                tint = Color.White
+            )
+        }
     }
 }

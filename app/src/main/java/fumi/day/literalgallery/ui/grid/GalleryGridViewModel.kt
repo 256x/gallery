@@ -1,5 +1,6 @@
 package fumi.day.literalgallery.ui.grid
 
+import android.content.Intent
 import android.content.IntentSender
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -84,6 +85,28 @@ class GalleryGridViewModel @Inject constructor(
     fun deleteDirectly(keys: Set<String>) {
         val uris = mediaItems.value.filter { it.mediaKey in keys }.map { it.contentUri }
         mediaDeleter.deleteDirectly(uris)
+    }
+
+    fun shareIntentFor(keys: Set<String>): Intent {
+        val items = mediaItems.value.filter { it.mediaKey in keys }
+        val uris = items.map { it.contentUri }
+        val mimeType = when {
+            items.all { !it.isVideo } -> "image/*"
+            items.all { it.isVideo } -> "video/*"
+            else -> "*/*"
+        }
+        val sendIntent = if (uris.size == 1) {
+            Intent(Intent.ACTION_SEND).apply {
+                putExtra(Intent.EXTRA_STREAM, uris.first())
+            }
+        } else {
+            Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+            }
+        }
+        sendIntent.type = mimeType
+        sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        return Intent.createChooser(sendIntent, null)
     }
 
     // --- EXIF (read on demand, only when the viewer's Exif panel is opened) ---
