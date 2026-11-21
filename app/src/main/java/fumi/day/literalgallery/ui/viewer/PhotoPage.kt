@@ -64,7 +64,9 @@ fun PhotoPage(item: MediaItem, modifier: Modifier = Modifier) {
                         if (event.changes.size >= 2 || zoomedIn) {
                             val zoomChange = event.calculateZoom()
                             scale = (scale * zoomChange).coerceIn(MIN_SCALE, MAX_SCALE)
-                            offset = if (scale > MIN_SCALE) offset + panChange else Offset.Zero
+                            // pointerInput sits after graphicsLayer, so panChange arrives in the scaled
+                            // layer's local space (finger distance / scale); multiply back to screen px.
+                            offset = if (scale > MIN_SCALE) offset + panChange * scale else Offset.Zero
                             event.changes.forEach { it.consume() }
                         }
                     } while (event.changes.fastAny { it.pressed })

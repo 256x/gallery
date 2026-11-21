@@ -53,6 +53,8 @@ fun MediaViewerScreen(
     HorizontalPager(
         state = pagerState,
         key = { items[it].mediaKey },
+        // Compose (and so start decoding) neighbouring photos before the swipe reaches them.
+        beyondViewportPageCount = 2,
         modifier = Modifier.fillMaxSize().background(Color.Black)
     ) { page ->
         val item = items[page]

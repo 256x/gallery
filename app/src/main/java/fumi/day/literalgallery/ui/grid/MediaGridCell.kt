@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,9 +25,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.size.Size
 import fumi.day.literalgallery.domain.model.MediaItem
 import fumi.day.literalgallery.util.formatDurationMs
+
+private const val THUMB_PX = 400
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -44,8 +51,18 @@ fun MediaGridCell(
             .clip(RoundedCornerShape(2.dp))
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
     ) {
+        // Fixed request size: Coil's memory-cache key includes size, so letting it follow the
+        // cell size made every column-count change miss the cache and re-decode every photo.
+        val context = LocalContext.current
+        val request = remember(item.contentUri) {
+            ImageRequest.Builder(context)
+                .data(item.contentUri)
+                .size(Size(THUMB_PX, THUMB_PX))
+                .crossfade(false)
+                .build()
+        }
         AsyncImage(
-            model = item.contentUri,
+            model = request,
             contentDescription = item.displayName,
             contentScale = ContentScale.Crop,
             modifier = Modifier.aspectRatio(1f)
