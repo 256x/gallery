@@ -1,6 +1,7 @@
 package fumi.day.literalgallery.ui.grid
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -43,6 +44,9 @@ fun GalleryGridScreen(
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) viewModel.clearSelection()
     }
+    // Back in multi-select clears the selection instead of leaving the app.
+    BackHandler(enabled = isSelectionMode) { viewModel.clearSelection() }
+
     var columnCount by rememberSaveable { mutableIntStateOf(3) }
     val gridState = rememberLazyGridState()
 
